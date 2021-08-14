@@ -5,6 +5,7 @@
 // TODO: 
 //      - CMDR namespace that unreadies units on command sent
 //      - store Player data
+//      - added extra dereference right? Should probably eventually change it back
 
 using namespace Basic;
 using namespace Basic::Refs;

@@ -2,14 +2,15 @@
 #include "BWAPI.h"
 
 namespace Units {
-    const int ZERG_TYPE_CT = 28;
+    const int ZERG_TYPE_CT = 30;
     const int TERRAN_TYPE_CT = 35;
     const int PROTOSS_TYPE_CT = 32;
 
     void init(const BWAPI::Player *players);
-    void on_frame_update(const BWAPI::Player *players);
-    int* get_unit_type_counts(int player_index);
-    bool* get_can_make(int player_index);
+    void record_data(FILE *data_file);
+    void queue_store(const BWAPI::Unit u);
+    void queue_remove(const BWAPI::Unit u);
+    void on_frame_update();
 
     const BWAPI::UnitType ZERG_TYPES[ZERG_TYPE_CT] = {
         BWAPI::UnitTypes::Zerg_Drone,
@@ -39,7 +40,9 @@ namespace Units {
         BWAPI::UnitTypes::Zerg_Greater_Spire,
         BWAPI::UnitTypes::Zerg_Nydus_Canal,
         BWAPI::UnitTypes::Zerg_Ultralisk_Cavern,
-        BWAPI::UnitTypes::Zerg_Defiler_Mound
+        BWAPI::UnitTypes::Zerg_Defiler_Mound,
+        BWAPI::UnitTypes::Zerg_Egg,
+        BWAPI::UnitTypes::Zerg_Lurker_Egg
     };
 
     const BWAPI::UnitType TERRAN_TYPES[TERRAN_TYPE_CT] = {

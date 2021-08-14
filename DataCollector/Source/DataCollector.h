@@ -49,6 +49,7 @@ private:
 public:
     // Virtual functions for callbacks, leave these as they are.
     void         set_players();
+    void         write_init_data();
     virtual void onStart();
     virtual void onEnd(bool isWinner);
     virtual void onFrame();

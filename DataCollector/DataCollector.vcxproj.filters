@@ -70,8 +70,11 @@
     <ClCompile Include="Source\DataCollector.cpp" />
     <ClCompile Include="Source\Dll.cpp" />
     <ClCompile Include="Source\utility\BWTimer.cpp" />
-    <ClCompile Include="Source\Income.cpp" />
     <ClCompile Include="Source\Units.cpp" />
+    <ClCompile Include="Source\UnitData.cpp" />
+    <ClCompile Include="Source\UnitArray.cpp" />
+    <ClCompile Include="Source\References.cpp" />
+    <ClCompile Include="Source\Economy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\BWEM\area.h">
@@ -152,10 +155,22 @@
     <ClInclude Include="Source\utility\BWTimer.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Income.h">
+    <ClInclude Include="Source\Units.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Units.h">
+    <ClInclude Include="Source\Moddefs.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\References.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UnitArray.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\UnitData.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Economy.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
