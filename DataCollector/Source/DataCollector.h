@@ -1,13 +1,13 @@
 #pragma once
 
 #include <BWAPI.h>
-#include <BWEM/bwem.h>
-#include <BWEB/BWEB.h>
+// #include <BWEM/bwem.h>
+// #include <BWEB/BWEB.h>
 #include <windows.h>
 #include <stdio.h>
 #include <assert.h>
 
-namespace {auto &the_map = BWEM::Map::Instance();}
+// namespace {auto &the_map = BWEM::Map::Instance();}
 
 using namespace BWAPI;
 using namespace Filter;
@@ -22,34 +22,27 @@ private:
         freopen_s(&pFile, "CONOUT$", "w", stdout);
     }
 
-    void onStart_send_workers_to_mine() {
-        for (Unit u : Broodwar->self()->getUnits()) {
-            if (u->getType().isWorker()) {
-                u->gather(u->getClosestUnit(IsMineralField));
-            }
-        }
-    }
-
-    void onStart_init_bwem_and_bweb() {
-        try {
-            printf("Map init\n");
-            Broodwar << "Map init..." << std::endl;
-            the_map.Initialize();
-            the_map.EnableAutomaticPathAnalysis();
-            bool starting_locs_ok = the_map.FindBasesForStartingLocations();
-            assert(starting_locs_ok);
-        }
-        catch (const std::exception e) {
-            Broodwar << "EXCEPTION: " << e.what() << std::endl;
-        }
-        BWEB::Map::onStart();
-        BWEB::Blocks::findBlocks();
-    }
+    // void onStart_init_bwem_and_bweb() {
+    //     try {
+    //         printf("Map init\n");
+    //         Broodwar << "Map init..." << std::endl;
+    //         the_map.Initialize();
+    //         the_map.EnableAutomaticPathAnalysis();
+    //         bool starting_locs_ok = the_map.FindBasesForStartingLocations();
+    //         assert(starting_locs_ok);
+    //     }
+    //     catch (const std::exception e) {
+    //         Broodwar << "EXCEPTION: " << e.what() << std::endl;
+    //     }
+    //     BWEB::Map::onStart();
+    //     BWEB::Blocks::findBlocks();
+    // }
 
 public:
     // Virtual functions for callbacks, leave these as they are.
     void         set_players();
     void         write_init_data();
+    void         write_end_data();
     virtual void onStart();
     virtual void onEnd(bool isWinner);
     virtual void onFrame();

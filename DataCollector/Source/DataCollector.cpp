@@ -2,6 +2,8 @@
 #include "utility/BWTimer.h"
 #include "Economy.h"
 #include "Units.h"
+#include "TechAndUpgrades.h"
+#include "Moddefs.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,6 +18,7 @@ using namespace Filter;
 BWTimer timer;
 BWAPI::Player first = nullptr;
 BWAPI::Player second = nullptr;
+BWAPI::Player winner = nullptr;
 BWAPI::Player players[2];
 BWAPI::Race   races[2];
 char file_path[FILENAMEBUFFLEN] = "D:\\projects\\frogfish\\data\\";
@@ -30,12 +33,6 @@ FILE *data_file;
     // output limited to those unique zerg words (only moving units + hatcheries)
     // uses last word + memory
 
-/*
-Head: map name, map size, races, starting positions
-Tail: 
-    - winner
-
-*/
 bool set_data_file_path() {
     const int folder_path_char_len = strlen(file_path),
         file_name_remaining_chars = FILENAMEBUFFLEN - folder_path_char_len;
@@ -97,27 +94,39 @@ void DataCollector::write_init_data() {
     fwrite(init_data, 1, 49 * 2, data_file);
 }
 
+void DataCollector::write_end_data() {
+    char end_data[31];
+    end_data[0] = Moddefs::WINNER;
+    const char *winner_name = winner->getName().c_str();
+    int name_len = strlen(winner_name);
+    int copy_ct = (30 > name_len ? name_len : 30);
+    strncpy(end_data + 1, winner->getName().c_str(), copy_ct);
+    fwrite(end_data, 1, 31, data_file);
+    fclose(data_file);
+    data_file = nullptr;
+}
+
 void DataCollector::onStart() {
     if (set_data_file_path()) {
-        Broodwar->sendText("Opening %s", file_path);
+        printf("Writing game data to %s", file_path);
         data_file = fopen(file_path, "wb");
     }
     else {
         fprintf(stderr, "DataCollector::onStart(): set_data_file_path() returned false\n");
         exit(1);
     }
-    Broodwar->setLocalSpeed(4);
-    //Broodwar->setCommandOptimizationLevel(2);
+    Broodwar->setLocalSpeed(9);
     onStart_alloc_debug_console();
     set_players();
     write_init_data();
     Units::init(players);
     Economy::init(players);
+    TechAndUpgrades::init(players);
     timer.start(4, 0);
 }
 
 void DataCollector::onFrame() {
-	if (Broodwar->isPaused()) {return;}
+	if (Broodwar->isPaused() || winner != nullptr) {return;}
 
     Units::on_frame_update();
 
@@ -125,9 +134,19 @@ void DataCollector::onFrame() {
     if (timer.is_stopped()) {
         Units::record_data(data_file);
         Economy::record_data(data_file);
+        TechAndUpgrades::record_data(data_file);
         timer.restart();
     }
-    
+    if (players[0]->getUnits().size() == 0) {
+        printf("%s has no units, so they must be the loser\n", players[0]->getName().c_str());
+        winner = players[1];
+        write_end_data();
+    }
+    else if (players[1]->getUnits().size() == 0) {
+        printf("%s has no units, so they must be the loser\n", players[1]->getName().c_str());
+        winner = players[0];
+        write_end_data();
+    }
 }
 
 void DataCollector::onSendText(std::string text) {
@@ -140,6 +159,11 @@ void DataCollector::onReceiveText(BWAPI::Player player, std::string text) {
 
 void DataCollector::onPlayerLeft(BWAPI::Player player) {
     Broodwar->sendText("Farewell %s!", player->getName().c_str());
+    if (winner == nullptr) {
+        printf("%s left the game, so they must be the loser\n", player->getName().c_str());
+        winner = (player == players[0] ? players[1] : players[0]);
+        write_end_data();
+    }
 }
 
 void DataCollector::onNukeDetect(BWAPI::Position target) {
@@ -207,6 +231,8 @@ void DataCollector::onUnitComplete(Unit unit) {
 }
 
 void DataCollector::onEnd(bool isWinner) {
-    fclose(data_file);
+    if (data_file != nullptr) {
+        fclose(data_file);
+    }
     FreeConsole();
 }

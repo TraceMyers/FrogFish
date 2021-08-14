@@ -3,25 +3,13 @@
 #include "UnitData.h"
 #include "Moddefs.h"
 #include <fstream>
-
-
-// TODO: for logging births and deaths, just keep memory of 
-// units since last n frame update to check against, then just do an ID list for each
-// in analysis/modeling: IDs that died since last update can be checked in last update
-//                       IDs born since last update can be check in this one
-// it's imperfect but accurate enough; death isn't exactly death and birth isn't exactly birth
-// when it comes to BW units but it's true mostly/most of the time
-
-// - can make units in form 100010100...
-// - Unit data in form
-/*  {23,2,1200,402,2.3,...}, {38,2,...}, ...
-*/
-
-// TODO: figure out why getting 100 bytes per unit in hex dump
+#include <set>
 
 namespace Units {
 
-    const int BUFFLEN = 3000*30;
+    const int DOUBLE_BYTES_PER_UNIT = 60;
+    const int BUFFLEN = 1600 * DOUBLE_BYTES_PER_UNIT;
+    const int HALFBUFFLEN = 800 * DOUBLE_BYTES_PER_UNIT;
     const int UNIT_MAX = 400;
 
     namespace {
@@ -283,6 +271,7 @@ namespace Units {
             }
             _p1_scheduled_for_removal.clear();
             _p1_just_changed_type.clear();
+
             _p2_just_stored.clear();
             for (unsigned int i = 0; i < _p2_scheduled_for_removal.size(); ++i) {
                 int ID = _p2_scheduled_for_removal[i];
@@ -303,7 +292,7 @@ namespace Units {
     }
 
     void clear_units_file_buff() {
-        memset(units_file_buff + 2, 0, BUFFLEN * 2 - 2);
+        memset((unsigned char*)(units_file_buff) + 2, 0, BUFFLEN * 2 - 2);
         _index = UNIT_DATA_START; // where individual unit data begins
     }
 
@@ -378,7 +367,11 @@ namespace Units {
         units_file_buff[_index] |= (uint16_t)u_data.is_visible << 8; 
         units_file_buff[_index] |= (uint16_t)u_data.is_being_healed << 9;
         units_file_buff[_index] |= (uint16_t)u_data.is_being_constructed << 10;
-        units_file_buff[_index] |= (uint16_t)u_data.is_repairing << 11; // 2
+        units_file_buff[_index] |= (uint16_t)u_data.is_repairing << 11;
+        units_file_buff[_index] |= (uint16_t)u_data.just_stored << 12;
+        units_file_buff[_index] |= (uint16_t)u_data.just_changed_type << 13;
+        units_file_buff[_index] |= (uint16_t)u_data.just_removed << 14; 
+        units_file_buff[_index] |= (uint16_t)(u_data.player == p1 ? 0 : 1) << 15; // 2
         ++_index;
         // 120 bytes per unit
     }
@@ -411,61 +404,47 @@ namespace Units {
                 }
             } 
         } // 40 * 2 + 16 bits = 96 bits = 12 bytes (6 double bytes) up to this point
-
-        int p1_units_size = _p1_units.size();
-        units_file_buff[_index++] = p1_units_size;
-        for (int i = 0; i < p1_units_size; ++i) {
-            const UnitData &u_data = *ID_to_data[_p1_units[i]->getID()];
-            write_unit_to_buff(u_data);
-        }
-
-        int p1_just_stored_size = _p1_just_stored.size();
-        units_file_buff[_index++] = p1_just_stored_size;
-        for (int i = 0; i < p1_just_stored_size; ++i) {
-            const UnitData &u_data = *ID_to_data[_p1_just_stored[i]];
-            write_unit_to_buff(u_data);
-        }
-
-        int p1_just_changed_type_size = _p1_just_changed_type.size();
-        units_file_buff[_index++] = p1_just_changed_type_size;
-        for (int i = 0; i < p1_just_changed_type_size; ++i) {
-            const UnitData &u_data = *ID_to_data[_p1_just_changed_type[i]];
-            write_unit_to_buff(u_data);
-        }
-
-        int p1_scheduled_for_removal_size = _p1_scheduled_for_removal.size();
-        units_file_buff[_index++] = p1_scheduled_for_removal_size;
-        for (int i = 0; i < p1_scheduled_for_removal_size; ++i) {
-            const UnitData &u_data = *ID_to_data[_p1_scheduled_for_removal[i]];
-            write_unit_to_buff(u_data);
-        }
-
-        int p2_units_size = _p2_units.size();
-        units_file_buff[_index++] = p2_units_size;
-        for (int i = 0; i < p2_units_size; ++i) {
-            UnitData &u_data = *ID_to_data[_p2_units[i]->getID()];
-            write_unit_to_buff(u_data);
-        }
-
-        int p2_just_stored_size = _p2_just_stored.size();
-        units_file_buff[_index++] = p2_just_stored_size;
-        for (int i = 0; i < p2_just_stored_size; ++i) {
-            const UnitData &u_data = *ID_to_data[_p2_just_stored[i]];
-            write_unit_to_buff(u_data);
-        }
-
-        int p2_just_changed_type_size = _p2_just_changed_type.size();
-        units_file_buff[_index++] = p2_just_changed_type_size;
-        for (int i = 0; i < p2_just_changed_type_size; ++i) {
-            const UnitData &u_data = *ID_to_data[_p2_just_changed_type[i]];
-            write_unit_to_buff(u_data);
-        }
-
-        int p2_scheduled_for_removal_size = _p2_scheduled_for_removal.size();
-        units_file_buff[_index++] = p2_scheduled_for_removal_size;
-        for (int i = 0; i < p2_scheduled_for_removal_size; ++i) {
-            const UnitData &u_data = *ID_to_data[_p2_scheduled_for_removal[i]];
-            write_unit_to_buff(u_data);
+        for (auto const &ID_and_data : ID_to_data) {
+            int unit_ID = ID_and_data.first;
+            UnitData &unit_data = *(ID_and_data.second);
+            unit_data.just_stored = false;
+            unit_data.just_changed_type = false;
+            unit_data.just_removed = false;
+            if (unit_data.player == p1) {
+                for (int i = 0; i < _p1_just_stored.size(); ++i) {
+                    if (unit_ID == _p1_just_stored[i]) {
+                        ID_to_data[unit_ID]->just_stored = true;
+                    }
+                }
+                for (int i = 0; i < _p1_just_changed_type.size(); ++i) {
+                    if (unit_ID = _p1_just_changed_type[i]) {
+                        ID_to_data[unit_ID]->just_changed_type = true;
+                    }
+                }
+                for (int i = 0; i < _p1_scheduled_for_removal.size(); ++i) {
+                    if (unit_ID = _p1_scheduled_for_removal[i]) {
+                        ID_to_data[unit_ID]->just_removed = true;
+                    }
+                }
+            }
+            else {
+                for (int i = 0; i < _p2_just_stored.size(); ++i) {
+                    if (unit_ID == _p2_just_stored[i]) {
+                        ID_to_data[unit_ID]->just_stored = true;
+                    }
+                }
+                for (int i = 0; i < _p2_just_changed_type.size(); ++i) {
+                    if (unit_ID = _p2_just_changed_type[i]) {
+                        ID_to_data[unit_ID]->just_changed_type = true;
+                    }
+                }
+                for (int i = 0; i < _p2_scheduled_for_removal.size(); ++i) {
+                    if (unit_ID = _p2_scheduled_for_removal[i]) {
+                        ID_to_data[unit_ID]->just_removed = true;
+                    }
+                }
+            } // 120 bytes per unit
+            write_unit_to_buff(unit_data);
         }
 
         fwrite(units_file_buff, 2, _index, data_file);

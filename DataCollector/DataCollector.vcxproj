@@ -130,6 +130,7 @@
     <ClCompile Include="Source\Dll.cpp" />
     <ClCompile Include="Source\Economy.cpp" />
     <ClCompile Include="Source\References.cpp" />
+    <ClCompile Include="Source\TechAndUpgrades.cpp" />
     <ClCompile Include="Source\UnitArray.cpp" />
     <ClCompile Include="Source\UnitData.cpp" />
     <ClCompile Include="Source\Units.cpp" />
@@ -164,6 +165,7 @@
     <ClInclude Include="Source\Economy.h" />
     <ClInclude Include="Source\Moddefs.h" />
     <ClInclude Include="Source\References.h" />
+    <ClInclude Include="Source\TechAndUpgrades.h" />
     <ClInclude Include="Source\UnitArray.h" />
     <ClInclude Include="Source\UnitData.h" />
     <ClInclude Include="Source\Units.h" />

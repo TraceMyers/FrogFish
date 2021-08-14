@@ -75,6 +75,7 @@
     <ClCompile Include="Source\UnitArray.cpp" />
     <ClCompile Include="Source\References.cpp" />
     <ClCompile Include="Source\Economy.cpp" />
+    <ClCompile Include="Source\TechAndUpgrades.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\BWEM\area.h">
@@ -171,6 +172,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Economy.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\TechAndUpgrades.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
