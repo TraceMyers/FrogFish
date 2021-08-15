@@ -83,7 +83,8 @@ void DataCollector::set_players() {
 
 void DataCollector::write_init_data() {
     uint16_t init_data[49];
-    memset(init_data, 0, 49 * 2);
+    memset(init_data, 0, 49 * 2); 
+    puts(Broodwar->mapName().c_str());
     memcpy(init_data, Broodwar->mapName().c_str(), strlen(Broodwar->mapName().c_str()));
     memcpy(init_data + 15, players[0]->getName().c_str(), strlen(players[0]->getName().c_str()));
     memcpy(init_data + 30, players[1]->getName().c_str(), strlen(players[1]->getName().c_str()));
@@ -95,13 +96,13 @@ void DataCollector::write_init_data() {
 }
 
 void DataCollector::write_end_data() {
-    char end_data[31];
-    end_data[0] = Moddefs::WINNER;
+    char end_data[32];
+    *((uint16_t*)end_data) = Moddefs::WINNER;
     const char *winner_name = winner->getName().c_str();
     int name_len = strlen(winner_name);
     int copy_ct = (30 > name_len ? name_len : 30);
-    strncpy(end_data + 1, winner->getName().c_str(), copy_ct);
-    fwrite(end_data, 1, 31, data_file);
+    strncpy(end_data + 2, winner->getName().c_str(), copy_ct);
+    fwrite(end_data, 1, 32, data_file);
     fclose(data_file);
     data_file = nullptr;
 }
@@ -159,7 +160,7 @@ void DataCollector::onReceiveText(BWAPI::Player player, std::string text) {
 
 void DataCollector::onPlayerLeft(BWAPI::Player player) {
     Broodwar->sendText("Farewell %s!", player->getName().c_str());
-    if (winner == nullptr) {
+    if (winner == nullptr && (player == players[0] || player == players[1])) {
         printf("%s left the game, so they must be the loser\n", player->getName().c_str());
         winner = (player == players[0] ? players[1] : players[0]);
         write_end_data();
